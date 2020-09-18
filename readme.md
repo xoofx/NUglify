@@ -15,6 +15,7 @@ See the [ChangeLog](changelog.md)
 ## Features
 
 - JS minification
+- - Fully ES2020 + ES2021 compliant
 - Css minification
 - HTML minification
   - Can help to reduce by 5-10% a standard HTML document
