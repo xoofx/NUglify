@@ -59,9 +59,9 @@ namespace NUglify.Tests.JavaScript
             // https://ajax.googleapis.com/ajax/libs/angularjs/1.5.3/angular.js
             var client = new WebClient();
             var jqueryText = client.DownloadString(url);
-            var result = Uglify.Js(jqueryText, file, new CodeSettings()
+            var result = Uglify.Js(jqueryText, file, new CodeSettings
             {
-                PreserveImportantComments = false,
+                CommentMode = JsComment.None,
                 StripDebugStatements = true,
                 LineBreakThreshold = int.MaxValue,
             });

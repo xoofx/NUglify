@@ -50,5 +50,12 @@ namespace NUglify.Tests.Css
 	        var uglifyResult = Uglify.Css("p { color: red; }", new CssSettings { Indent = "   ", OutputMode = OutputMode.MultipleLines });
 	        Assert.AreEqual("p\n{\n   color: #f00\n}", uglifyResult.Code);
         }
+
+        [Test]
+        public void Bug189()
+        {
+	        TestHelper.Instance.RunTest("-lines:m -comments:all");
+        }
+
     }
 }

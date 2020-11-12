@@ -12,7 +12,7 @@ function one(a,b)
 
 function two(c,d)
 {
-    // no semi-colons -- they are implicit and should still count
+    //! no semi-colons -- they are implicit and should still count
     "some other prologue"
     "use strict"
     c = d + c + d;

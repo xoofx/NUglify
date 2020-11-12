@@ -42,20 +42,20 @@ namespace NUglify.JavaScript
     {
         #region private fields
 
-        private static bool[] s_skippableTokens = InitializeSkippableTokens();
+        static bool[] s_skippableTokens = InitializeSkippableTokens();
 
-        private GlobalScope m_globalScope;
-        private JSScanner m_scanner;
-        private SourceContext m_currentToken;
+        GlobalScope m_globalScope;
+        JSScanner m_scanner;
+        SourceContext m_currentToken;
 
-        private bool m_newModule;
+        bool m_newModule;
 
-        private CodeSettings m_settings;// = null;
+        CodeSettings m_settings;// = null;
 
-        private bool m_foundEndOfLine;
-        private IList<SourceContext> m_importantComments;
+        bool foundEndOfLine;
+        IList<Comment> comments;
 
-        private Dictionary<string, LabelInfo> m_labelInfo;
+        Dictionary<string, LabelInfo> m_labelInfo;
 
         #endregion
 
@@ -163,7 +163,7 @@ namespace NUglify.JavaScript
         /// </summary>
         public JSParser()
         {
-            m_importantComments = new List<SourceContext>();
+            comments = new List<Comment>();
             m_labelInfo = new Dictionary<string, LabelInfo>();
         }
 
@@ -199,7 +199,7 @@ namespace NUglify.JavaScript
 
             // clear out some collections in case there was stuff left over from
             // a previous parse run
-            m_importantComments.Clear();
+            comments.Clear();
             m_labelInfo.Clear();
 
             return InternalParse();
@@ -683,7 +683,7 @@ namespace NUglify.JavaScript
                     }
                 }
 
-                AppendImportantComments(block);
+                AppendComments(block);
 
             }
             catch (EndOfStreamException)
@@ -730,170 +730,170 @@ namespace NUglify.JavaScript
         // ParseXXX routine does it as well, it should return directly from the switch statement
         // without any further execution in the ParseStatement
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
-        private AstNode ParseStatement(bool fSourceElement, bool skipImportantComment = false)
+        AstNode ParseStatement(bool fSourceElement, bool skipComments = false)
         {
+            // if we want to skip comments, now is a good time to clear anything we may have picked up already.
+            if (skipComments)
+	            comments.Clear();
+
+            if (comments.Count > 0 && m_settings.CommentMode != JsComment.None)
+            //&& m_settings.IsModificationAllowed(TreeModifications.PreserveImportantComments))
+            {
+	            // we have at least one comment before the upcoming statement.
+	            // pop the first comment off the queue, return that node instead.
+	            // don't advance the token -- we'll probably be coming back again for the next one (if any)
+
+                var comment = comments[0];
+	            comments.RemoveAt(0);
+
+                if (!comment.IsImportant)
+		            return new StandardComment(comment.Context);
+
+                return new ImportantComment(comment.Context);
+            }
+
             AstNode statement = null;
 
-            // if we want to skip important comments, now is a good time to clear anything we may 
-            // have picked up already.
-            if (skipImportantComment)
+            switch (m_currentToken.Token)
             {
-                m_importantComments.Clear();
-            }
+	            case JSToken.EndOfFile:
+		            ReportError(JSError.ErrorEndOfFile);
+		            return null; // abort parsing, get back to the main parse routine
 
-            if (m_importantComments.Count > 0
-                && m_settings.PreserveImportantComments
-                && m_settings.IsModificationAllowed(TreeModifications.PreserveImportantComments))
-            {
-                // we have at least one important comment before the upcoming statement.
-                // pop the first important comment off the queue, return that node instead.
-                // don't advance the token -- we'll probably be coming back again for the next one (if any)
-                statement = new ImportantComment(m_importantComments[0]);
-                m_importantComments.RemoveAt(0);
-            }
-            else
-            {
-                switch (m_currentToken.Token)
-                {
-                    case JSToken.EndOfFile:
-                        ReportError(JSError.ErrorEndOfFile);
-                        return null; // abort parsing, get back to the main parse routine
+	            case JSToken.Semicolon:
+		            // make an empty statement
+		            statement = new EmptyStatement(m_currentToken.Clone());
+		            GetNextToken();
+		            return statement;
 
-                    case JSToken.Semicolon:
-                        // make an empty statement
-                        statement = new EmptyStatement(m_currentToken.Clone());
-                        GetNextToken();
-                        return statement;
+	            case JSToken.RightCurly:
+		            ReportError(JSError.SyntaxError);
+		            GetNextToken();
+		            break;
 
-                    case JSToken.RightCurly:
-                        ReportError(JSError.SyntaxError);
-                        GetNextToken();
-                        break;
+	            case JSToken.LeftCurly:
+		            return ParseBlock();
 
-                    case JSToken.LeftCurly:
-                        return ParseBlock();
+	            case JSToken.Debugger:
+		            return ParseDebuggerStatement();
 
-                    case JSToken.Debugger:
-                        return ParseDebuggerStatement();
+	            case JSToken.Var:
+	            case JSToken.Const:
+	            case JSToken.Let:
+		            return ParseVariableStatement();
 
-                    case JSToken.Var:
-                    case JSToken.Const:
-                    case JSToken.Let:
-                        return ParseVariableStatement();
+	            case JSToken.If:
+		            return ParseIfStatement();
 
-                    case JSToken.If:
-                        return ParseIfStatement();
+	            case JSToken.For:
+		            return ParseForStatement();
 
-                    case JSToken.For:
-                        return ParseForStatement();
+	            case JSToken.Do:
+		            return ParseDoStatement();
 
-                    case JSToken.Do:
-                        return ParseDoStatement();
+	            case JSToken.While:
+		            return ParseWhileStatement();
 
-                    case JSToken.While:
-                        return ParseWhileStatement();
+	            case JSToken.Continue:
+		            return ParseContinueStatement();
 
-                    case JSToken.Continue:
-                        return ParseContinueStatement();
+	            case JSToken.Break:
+		            return ParseBreakStatement();
 
-                    case JSToken.Break:
-                        return ParseBreakStatement();
+	            case JSToken.Return:
+		            return ParseReturnStatement();
 
-                    case JSToken.Return:
-                        return ParseReturnStatement();
+	            case JSToken.With:
+		            return ParseWithStatement();
 
-                    case JSToken.With:
-                        return ParseWithStatement();
+	            case JSToken.Switch:
+		            return ParseSwitchStatement();
 
-                    case JSToken.Switch:
-                        return ParseSwitchStatement();
+	            case JSToken.Throw:
+		            return ParseThrowStatement();
 
-                    case JSToken.Throw:
-                        return ParseThrowStatement();
+	            case JSToken.Try:
+		            return ParseTryStatement();
 
-                    case JSToken.Try:
-                        return ParseTryStatement();
-
-                    case JSToken.Async:
+	            case JSToken.Async:
                         
-                        var peekToken = PeekToken();
-                        if (peekToken == JSToken.Function)
-                        {
-                            // Treat 'async function' as a function declaration
-                            goto case (JSToken.Function);
-                        }
-                        else
-                        {
-                            // Treat `async(` as if its a normal expression
-                            goto default;
-                        }
-                    case JSToken.Function:
-                        {
-                            // parse a function declaration
-                            var function = ParseFunction(FunctionType.Declaration, m_currentToken.Clone());
-                            function.IsSourceElement = fSourceElement;
-                            return function;
-                        }
-                    case JSToken.Class:
-                        return ParseClassNode(ClassType.Declaration);
+		            var peekToken = PeekToken();
+		            if (peekToken == JSToken.Function)
+		            {
+			            // Treat 'async function' as a function declaration
+			            goto case (JSToken.Function);
+		            }
+		            else
+		            {
+			            // Treat `async(` as if its a normal expression
+			            goto default;
+		            }
+	            case JSToken.Function:
+	            {
+		            // parse a function declaration
+		            var function = ParseFunction(FunctionType.Declaration, m_currentToken.Clone());
+		            function.IsSourceElement = fSourceElement;
+		            return function;
+	            }
+	            case JSToken.Class:
+		            return ParseClassNode(ClassType.Declaration);
 
-                    case JSToken.Else:
-                        ReportError(JSError.InvalidElse);
-                        GetNextToken();
-                        break;
+	            case JSToken.Else:
+		            ReportError(JSError.InvalidElse);
+		            GetNextToken();
+		            break;
 
-                    case JSToken.ConditionalCommentStart:
-                        return ParseStatementLevelConditionalComment(fSourceElement);
+	            case JSToken.ConditionalCommentStart:
+		            return ParseStatementLevelConditionalComment(fSourceElement);
 
-                    case JSToken.ConditionalCompilationOn:
-                        var ccOn = new ConditionalCompilationOn(m_currentToken.Clone());
-                        GetNextToken();
-                        return ccOn;
+	            case JSToken.ConditionalCompilationOn:
+		            var ccOn = new ConditionalCompilationOn(m_currentToken.Clone());
+		            GetNextToken();
+		            return ccOn;
 
-                    case JSToken.ConditionalCompilationSet:
-                        return ParseConditionalCompilationSet();
+	            case JSToken.ConditionalCompilationSet:
+		            return ParseConditionalCompilationSet();
 
-                    case JSToken.ConditionalCompilationIf:
-                        return ParseConditionalCompilationIf(false);
+	            case JSToken.ConditionalCompilationIf:
+		            return ParseConditionalCompilationIf(false);
 
-                    case JSToken.ConditionalCompilationElseIf:
-                        return ParseConditionalCompilationIf(true);
+	            case JSToken.ConditionalCompilationElseIf:
+		            return ParseConditionalCompilationIf(true);
 
-                    case JSToken.ConditionalCompilationElse:
-                        var elseStatement = new ConditionalCompilationElse(m_currentToken.Clone());
-                        GetNextToken();
-                        return elseStatement;
+	            case JSToken.ConditionalCompilationElse:
+		            var elseStatement = new ConditionalCompilationElse(m_currentToken.Clone());
+		            GetNextToken();
+		            return elseStatement;
 
-                    case JSToken.ConditionalCompilationEnd:
-                        var endStatement = new ConditionalCompilationEnd(m_currentToken.Clone());
-                        GetNextToken();
-                        return endStatement;
+	            case JSToken.ConditionalCompilationEnd:
+		            var endStatement = new ConditionalCompilationEnd(m_currentToken.Clone());
+		            GetNextToken();
+		            return endStatement;
 
-                    case JSToken.Import:
-                        return ParseImport();
+	            case JSToken.Import:
+		            return ParseImport();
 
-                    case JSToken.Export:
-                        // export can't be an identifier name, so it must be an export statement
-                        return ParseExport();
+	            case JSToken.Export:
+		            // export can't be an identifier name, so it must be an export statement
+		            return ParseExport();
 
-                    case JSToken.Identifier:
-                        if (m_currentToken.Is("module"))
-                        {
-                            goto case JSToken.Module;
-                        }
-                        goto default;
+	            case JSToken.Identifier:
+		            if (m_currentToken.Is("module"))
+		            {
+			            goto case JSToken.Module;
+		            }
+		            goto default;
 
-                    case JSToken.Module:
-                        if (PeekCanBeModule())
-                        {
-                            return ParseModule();
-                        }
-                        goto default;
+	            case JSToken.Module:
+		            if (PeekCanBeModule())
+		            {
+			            return ParseModule();
+		            }
+		            goto default;
 
-                    default:
-                        statement = ParseExpressionStatement(fSourceElement);
-                        break;
-                }
+	            default:
+		            statement = ParseExpressionStatement(fSourceElement);
+		            break;
             }
 
             return statement;
@@ -1173,7 +1173,7 @@ namespace NUglify.JavaScript
                 {
                     ForceBraces = true
                 };
-            codeBlock.BraceOnNewLine = m_foundEndOfLine;
+            codeBlock.BraceOnNewLine = foundEndOfLine;
             GetNextToken();
 
             while (m_currentToken.IsNot(JSToken.RightCurly) && m_currentToken.IsNot(JSToken.EndOfFile))
@@ -1184,7 +1184,7 @@ namespace NUglify.JavaScript
             }
 
             // make sure any important comments before the closing brace are kept
-            AppendImportantComments(codeBlock);
+            AppendComments(codeBlock);
 
             if (m_currentToken.IsNot(JSToken.RightCurly))
             {
@@ -1942,7 +1942,7 @@ namespace NUglify.JavaScript
             GetNextToken();
 
             string label = null;
-            if (!m_foundEndOfLine && (m_currentToken.Is(JSToken.Identifier) || (label = JSKeyword.CanBeIdentifier(m_currentToken.Token)) != null))
+            if (!foundEndOfLine && (m_currentToken.Is(JSToken.Identifier) || (label = JSKeyword.CanBeIdentifier(m_currentToken.Token)) != null))
             {
                 continueNode.UpdateWith(m_currentToken);
                 continueNode.LabelContext = m_currentToken.Clone();
@@ -1987,7 +1987,7 @@ namespace NUglify.JavaScript
             GetNextToken();
 
             string label = null;
-            if (!m_foundEndOfLine && (m_currentToken.Is(JSToken.Identifier) || (label = JSKeyword.CanBeIdentifier(m_currentToken.Token)) != null))
+            if (!foundEndOfLine && (m_currentToken.Is(JSToken.Identifier) || (label = JSKeyword.CanBeIdentifier(m_currentToken.Token)) != null))
             {
                 breakNode.UpdateWith(m_currentToken);
                 breakNode.LabelContext = m_currentToken.Clone();
@@ -2032,7 +2032,7 @@ namespace NUglify.JavaScript
             GetNextToken();
 
             // CAN'T have a line-break between the "return" and its expression.
-            if (!m_foundEndOfLine)
+            if (!foundEndOfLine)
             {
                 if (m_currentToken.IsNot(JSToken.Semicolon) && m_currentToken.IsNot(JSToken.RightCurly))
                 {
@@ -2161,7 +2161,7 @@ namespace NUglify.JavaScript
             }
             else
             {
-                braceOnNewLine = m_foundEndOfLine;
+                braceOnNewLine = foundEndOfLine;
                 braceContext = m_currentToken.Clone();
                 GetNextToken();
             }
@@ -2256,7 +2256,7 @@ namespace NUglify.JavaScript
             GetNextToken();
 
             // cannot have a line break between "throw" and it's expression
-            if (!m_foundEndOfLine)
+            if (!foundEndOfLine)
             {
                 if (m_currentToken.IsNot(JSToken.Semicolon))
                 {
@@ -2401,7 +2401,7 @@ namespace NUglify.JavaScript
             SourceContext fromContext = null;
             if (m_currentToken.Is(JSToken.StringLiteral))
             {
-                if (m_foundEndOfLine)
+                if (foundEndOfLine)
                 {
                     // throw an error, but keep on parsing
                     ReportError(JSError.NewLineNotAllowed, null, true);
@@ -2942,7 +2942,7 @@ namespace NUglify.JavaScript
 	        {
 		        // parse the block locally to get the exact end of function
 		        body = new BlockStatement(m_currentToken.Clone());
-		        body.BraceOnNewLine = m_foundEndOfLine;
+                body.BraceOnNewLine = foundEndOfLine;
 		        GetNextToken();
 
 		        // parse the function body statements
@@ -3009,7 +3009,7 @@ namespace NUglify.JavaScript
                             };
                         }
                     }
-                    else if (!m_newModule)
+                    else if (!m_newModule && !(statement is ImportantComment || statement is StandardComment))
                     {
                         // no longer considering constant wrappers
                         possibleDirectivePrologue = false;
@@ -3026,7 +3026,7 @@ namespace NUglify.JavaScript
             }
 
             // make sure any important comments before the closing brace are kept
-            AppendImportantComments(body);
+            AppendComments(body);
         }
 
         private AstNodeList ParseFormalParameters()
@@ -3752,7 +3752,7 @@ namespace NUglify.JavaScript
             SourceContext exprCtx = null;
             if (null != ast)
             {
-                if (!m_foundEndOfLine)
+                if (!foundEndOfLine)
                 {
                     if (m_currentToken.Is(JSToken.Increment))
                     {
@@ -5426,7 +5426,7 @@ namespace NUglify.JavaScript
 
                 // we also want to assume that we found a newline character after
                 // the comment
-                m_foundEndOfLine = true;
+                foundEndOfLine = true;
             };
         }
 
@@ -5738,22 +5738,22 @@ namespace NUglify.JavaScript
             }
         }
 
-        void AppendImportantComments(BlockStatement block)
+        void AppendComments(BlockStatement block)
         {
             if (block != null)
             {
-                // make sure any important comments before the closing brace are kept
-                if (m_importantComments.Count > 0
-                    && m_settings.PreserveImportantComments
-                    && m_settings.IsModificationAllowed(TreeModifications.PreserveImportantComments))
+                // make sure any comments before the closing brace are kept
+                if (comments.Count > 0
+                    && m_settings.CommentMode != JsComment.None)
+                    //&& m_settings.IsModificationAllowed(TreeModifications.PreserveImportantComments))
                 {
-                    // we have important comments before the EOF. Add the comment(s) to the program.
-                    foreach (var importantComment in m_importantComments)
+                    // we have comments before the EOF. Add the comment(s) to the program.
+                    foreach (var comment in comments)
                     {
-                        block.Append(new ImportantComment(importantComment));
+	                    block.Append(comment.IsImportant ? new ImportantComment(comment.Context) : new StandardComment(comment.Context) as AstNode);
                     }
 
-                    m_importantComments.Clear();
+                    comments.Clear();
                 }
             }
         }
@@ -5800,25 +5800,27 @@ namespace NUglify.JavaScript
             }
 
             m_newModule = false;
-            m_foundEndOfLine = false;
-            m_importantComments.Clear();
+            foundEndOfLine = false;
+            comments.Clear();
 
             var nextToken = m_scanner.ScanNextToken();
             while (nextToken.IsOne(s_skippableTokens))
             {
-                if (nextToken.Is(JSToken.EndOfLine))
-                {
-                    m_foundEndOfLine = true;
-                }
-                else if (nextToken.IsEither(JSToken.MultipleLineComment, JSToken.SingleLineComment))
-                {
-                    if (nextToken.HasCode
-                        && ((nextToken.Code.Length > 2 && nextToken.Code[2] == '!')
-                        || (nextToken.Code.IndexOf("@preserve", StringComparison.OrdinalIgnoreCase) >= 0)
-                        || (nextToken.Code.IndexOf("@license", StringComparison.OrdinalIgnoreCase) >= 0)))
-                    {
-                        // this is an important comment -- save it for later
-                        m_importantComments.Add(nextToken.Clone());
+	            if (nextToken.Is(JSToken.EndOfLine))
+		            foundEndOfLine = true;
+
+	            else if (nextToken.IsEither(JSToken.MultipleLineComment, JSToken.SingleLineComment))
+	            {
+                    if(nextToken.HasCode){
+						var important = nextToken.Code.Length > 2 && nextToken.Code[2] == '!'
+	                                 || nextToken.Code.IndexOf("@preserve", StringComparison.OrdinalIgnoreCase) >= 0
+	                                 || nextToken.Code.IndexOf("@license", StringComparison.OrdinalIgnoreCase) >= 0;
+
+						comments.Add(new Comment
+						{
+							Context = nextToken.Clone(),
+							IsImportant = important
+						});
                     }
                 }
 
@@ -5833,7 +5835,7 @@ namespace NUglify.JavaScript
 
             if (nextToken.Is(JSToken.EndOfFile))
             {
-                m_foundEndOfLine = true;
+                foundEndOfLine = true;
             }
 
             return nextToken;
@@ -5937,7 +5939,7 @@ namespace NUglify.JavaScript
                 node.TerminatingContext = m_currentToken.Clone();
                 GetNextToken();
             }
-            else if (m_foundEndOfLine || m_currentToken.IsEither(JSToken.RightCurly, JSToken.EndOfFile))
+            else if (foundEndOfLine || m_currentToken.IsEither(JSToken.RightCurly, JSToken.EndOfFile))
             {
                 // semicolon insertion rules
                 // a right-curly or an end of line is something we don't WANT to throw a warning for. 

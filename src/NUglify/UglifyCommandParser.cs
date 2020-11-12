@@ -530,22 +530,22 @@ namespace NUglify
 
                             case "COMMENTS":
                                 // four options for css: none, all, important, or hacks
-                                // two options for js: none, important
+                                // three options for js: none, important, all
                                 // (default is important)
                                 if (paramPartUpper == "NONE")
                                 {
                                     CssSettings.CommentMode = CssComment.None;
-                                    JSSettings.PreserveImportantComments = false;
+                                    JSSettings.CommentMode = JsComment.None;
                                 }
                                 else if (paramPartUpper == "ALL")
                                 {
                                     CssSettings.CommentMode = CssComment.All;
-                                    OnCssOnlyParameter();
+                                    JSSettings.CommentMode = JsComment.All;
                                 }
                                 else if (paramPartUpper == "IMPORTANT")
                                 {
                                     CssSettings.CommentMode = CssComment.Important;
-                                    JSSettings.PreserveImportantComments = true;
+                                    JSSettings.CommentMode = JsComment.Important;
                                 }
                                 else if (paramPartUpper == "HACKS")
                                 {
@@ -1997,26 +1997,17 @@ namespace NUglify
 
         protected virtual void OnInvalidSwitch(string switchPart, string parameterPart)
         {
-            if (InvalidSwitch != null)
-            {
-                InvalidSwitch(this, new InvalidSwitchEventArgs() { SwitchPart = switchPart, ParameterPart = parameterPart });
-            }
+	        InvalidSwitch?.Invoke(this, new InvalidSwitchEventArgs { SwitchPart = switchPart, ParameterPart = parameterPart });
         }
 
         protected virtual void OnJSOnlyParameter()
         {
-            if (JSOnlyParameter != null)
-            {
-                JSOnlyParameter(this, new EventArgs());
-            }
+	        JSOnlyParameter?.Invoke(this, new EventArgs());
         }
 
         protected virtual void OnCssOnlyParameter()
         {
-            if (CssOnlyParameter != null)
-            {
-                CssOnlyParameter(this, new EventArgs());
-            }
+	        CssOnlyParameter?.Invoke(this, new EventArgs());
         }
 
         #endregion

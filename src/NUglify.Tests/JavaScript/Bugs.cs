@@ -165,6 +165,12 @@ namespace NUglify.Tests.JavaScript
         }
 
         [Test]
+        public void Bug189()
+        {
+	        TestHelper.Instance.RunTest("-pretty");
+        }
+
+        [Test]
         public void Bug197()
         {
 	        TestHelper.Instance.RunTest("-pretty -line:m,\t");

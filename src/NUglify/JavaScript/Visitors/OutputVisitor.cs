@@ -2030,9 +2030,9 @@ namespace NUglify.JavaScript.Visitors
 
                     m_startOfStatement = true;
                     node.TrueBlock[0].Accept(this);
-                    if (node.TrueBlock[0] is ImportantComment)
+                    if (node.TrueBlock[0] is ImportantComment || node.TrueBlock[0] is StandardComment)
                     {
-                        // the true-block only contained a single important comment.
+                        // the true-block only contained a single comment.
                         // that's not a true statement, so terminate it with an empty-statement
                         // semicolon
                         OutputPossibleLineBreak(';');
@@ -2091,6 +2091,78 @@ namespace NUglify.JavaScript.Visitors
 
                 EndSymbol(symbol);
             }
+        }
+
+        public void Visit(StandardComment node)
+        {
+	        if (node == null)
+		        return;
+
+	        if (settings.CommentMode != JsComment.All)
+		        return;
+
+	        var symbol = StartSymbol(node);
+
+	        // make sure we force the comments to start on a new line, regardless
+	        // of whether or not we are in multi- or single-line mode, and the statement after
+	        // should also be on a new line.
+            // TODO: remember if we need a break or not?
+	        BreakLine(true);
+
+	        node.Context.OutputLine = lineCount;
+
+	        // the output method assumes any text we send it's way doesn't contain any line feed
+	        // characters. The comment however, may contain some. We don't want to count
+	        // the entire comment as a single line, AND we want to normalize the line-feed characters,
+	        // so lets process the comment line-by-line
+	        var startIndex = 0;
+	        var firstLF = node.Comment.IndexOfAny(LineFeedCharacters, startIndex);
+	        if (firstLF < 0)
+	        {
+		        // no line-breaks at all!
+		        Output(node.Comment);
+	        }
+	        else
+	        {
+		        // output the first segment -- from start to first line break
+		        Output(node.Comment.Substring(0, firstLF));
+		        while (true)
+		        {
+			        // advance the next segment pointer
+			        if (node.Comment[firstLF] == '\r'
+			            && firstLF < node.Comment.Length - 1
+			            && node.Comment[firstLF + 1] == '\n')
+			        {
+				        startIndex = firstLF + 2;
+			        }
+			        else
+			        {
+				        startIndex = firstLF + 1;
+			        }
+
+			        // force the line-break in the output
+			        BreakLine(true);
+
+			        // look for the next line break
+			        firstLF = node.Comment.IndexOfAny(LineFeedCharacters, startIndex);
+
+			        if (firstLF > startIndex)
+			        {
+				        // only output something if there was something before the next line break
+				        Output(node.Comment.Substring(startIndex, firstLF - startIndex));
+			        }
+			        else if (firstLF < 0)
+			        {
+				        // no more line-breaks -- output the last segment and break out of the loop
+				        Output(node.Comment.Substring(startIndex));
+				        break;
+			        }
+		        }
+	        }
+
+	        // force a line-break AFTER the important comment as well
+	        BreakLine(true);
+	        EndSymbol(symbol);
         }
 
         public void Visit(ImportantComment node)
@@ -4032,7 +4104,7 @@ namespace NUglify.JavaScript.Visitors
             {
                 Indent();
                 NewLine();
-                if (block[0] is ImportantComment)
+                if (block[0] is ImportantComment || block[0] is StandardComment)
                 {
                     // not a REAL statement, so follow the comment with a semicolon to
                     // be the actual statement for this block.

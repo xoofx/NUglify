@@ -68,6 +68,8 @@ namespace NUglify.Tests.Css.Common
         /// </summary>
         TestHelper()
         {
+	        Trace.Listeners.Add(new ConsoleTraceListener());
+
             // start with the unit test DLL. All test data folders will be deployed there by testrun configuration.
             // In order to do that, make sure that "Deployment" section in .testrunconfig file contains the "TestData" folder. If
             // this is the case, then everything in the folder will be copied down right next to unit test DLL.

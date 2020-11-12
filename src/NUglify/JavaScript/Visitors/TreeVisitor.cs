@@ -439,6 +439,10 @@ namespace NUglify.JavaScript.Visitors
             }
         }
 
+        public virtual void Visit(StandardComment node)
+        {
+            // no children
+        }
         public virtual void Visit(ImportantComment node)
         {
             // no children
