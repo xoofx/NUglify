@@ -26,7 +26,7 @@ namespace NUglify.JavaScript.Syntax
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix")]
     public sealed class BlockStatement : Statement, IEnumerable<AstNode>
     {
-	    List<AstNode> m_list;
+	    List<AstNode> nodes;
 
         /// <summary>
         /// Gets a particular statement in the list of statements making up this block
@@ -35,18 +35,18 @@ namespace NUglify.JavaScript.Syntax
         /// <returns>abstract syntax tree node</returns>
         public AstNode this[int index]
         {
-            get { return m_list[index]; }
+            get => nodes[index];
             set
             {
-                UnlinkParent(m_list[index]);
+                UnlinkParent(nodes[index]);
                 if (value != null)
                 {
-                    m_list[index] = value;
-                    m_list[index].Parent = this;
+                    nodes[index] = value;
+                    nodes[index].Parent = this;
                 }
                 else
                 {
-                    m_list.RemoveAt(index);
+                    nodes.RemoveAt(index);
                 }
             }
         }
@@ -54,10 +54,7 @@ namespace NUglify.JavaScript.Syntax
         /// <summary>
         /// Gets the count of statements making up this block
         /// </summary>
-        public int Count
-        {
-            get { return m_list.Count; }
-        }
+        public int Count => nodes.Count;
 
         /// <summary>
         /// Gets or sets a boolean value indicating whether the brace for this block (if there was one) started
@@ -70,15 +67,10 @@ namespace NUglify.JavaScript.Syntax
         /// </summary>
         public bool IsModule { get; set; }
 
-        public override SourceContext TerminatingContext
-        {
-            get
-            {
-                // if we have one, return it. If not, see if there's only one
-                // line in our block, and if so, return it's terminator.
-                return base.TerminatingContext ?? (m_list.Count == 1 ? m_list[0].TerminatingContext : null);
-            }
-        }
+        public override SourceContext TerminatingContext =>
+	        // if we have one, return it. If not, see if there's only one
+	        // line in our block, and if so, return it's terminator.
+	        base.TerminatingContext ?? (nodes.Count == 1 ? nodes[0].TerminatingContext : null);
 
         /// <summary>
         /// Gets or sets whether to force this block to always have curly-braces around it
@@ -94,18 +86,13 @@ namespace NUglify.JavaScript.Syntax
         /// <summary>
         /// Returns false unless the block constains only a single statement that is itself an expression.
         /// </summary>
-        public override bool IsExpression
-        {
-            get
-            {
-                // if this block contains a single statement, then recurse.
-                // otherwise it isn't.
-                //
-                // TODO: if there are no statements -- empty block -- then is is an expression?
-                // I mean, we can make an empty block be an expression by just making it a zero. 
-                return m_list.Count == 1 && m_list[0].IsExpression;
-            }
-        }
+        public override bool IsExpression =>
+	        // if this block contains a single statement, then recurse.
+	        // otherwise it isn't.
+	        //
+	        // TODO: if there are no statements -- empty block -- then is is an expression?
+	        // I mean, we can make an empty block be an expression by just making it a zero. 
+	        nodes.Count == 1 && nodes[0].IsExpression;
 
         /// <summary>
         /// Gets an enumerator for the syntax tree nodes making up this block
@@ -114,22 +101,19 @@ namespace NUglify.JavaScript.Syntax
         {
             get
             {
-                return FastEnumerateNonNullNodes(m_list);
+                return FastEnumerateNonNullNodes(nodes);
             }
         }
 
         public BlockStatement(SourceContext context)
             : base(context)
         {
-            m_list = new List<AstNode>();
+            nodes = new List<AstNode>();
         }
 
         public override void Accept(IVisitor visitor)
         {
-            if (visitor != null)
-            {
-                visitor.Visit(this);
-            }
+	        visitor?.Visit(this);
         }
 
         /// <summary>
@@ -137,12 +121,12 @@ namespace NUglify.JavaScript.Syntax
         /// </summary>
         public void Clear()
         {
-            foreach (var item in m_list)
+            foreach (var item in nodes)
             {
                 item.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
             }
 
-            m_list.Clear();
+            nodes.Clear();
             this.IsConcise = false;
         }
 
@@ -150,7 +134,7 @@ namespace NUglify.JavaScript.Syntax
         {
             // if there's more than one item, then return false.
             // otherwise recurse the call
-            return (m_list.Count == 1 && m_list[0].EncloseBlock(type));
+            return (nodes.Count == 1 && nodes[0].EncloseBlock(type));
         }
 
         /// <summary>
@@ -161,9 +145,9 @@ namespace NUglify.JavaScript.Syntax
         /// <returns>true if the replacement was a succeess; false otherwise</returns>
         public override bool ReplaceChild(AstNode oldNode, AstNode newNode)
         {
-            for (int ndx = m_list.Count - 1; ndx >= 0; --ndx)
+            for (int ndx = nodes.Count - 1; ndx >= 0; --ndx)
             {
-                if (m_list[ndx] == oldNode)
+                if (nodes[ndx] == oldNode)
                 {
                     if ((oldNode != null) && (oldNode.Parent == this))
                     {
@@ -178,7 +162,7 @@ namespace NUglify.JavaScript.Syntax
                         this.IsConcise = false;
 
                         // just remove it
-                        m_list.RemoveAt(ndx);
+                        nodes.RemoveAt(ndx);
 
                         // if this was a concise block, it shouldn't be anymore
                         this.IsConcise = false;
@@ -190,13 +174,13 @@ namespace NUglify.JavaScript.Syntax
                         {
                             // the new "statement" is a block. That means we need to insert all
                             // the statements from the new block at the location of the old item.
-                            m_list.RemoveAt(ndx);
-                            InsertRange(ndx, newBlock.m_list);
+                            nodes.RemoveAt(ndx);
+                            InsertRange(ndx, newBlock.nodes);
                         }
                         else
                         {
                             // not a block -- slap it in there
-                            m_list[ndx] = newNode;
+                            nodes[ndx] = newNode;
                             newNode.Parent = this;
 
                             // if we were concise and we are replacing our single expression with
@@ -231,7 +215,7 @@ namespace NUglify.JavaScript.Syntax
                 }
 
                 item.Parent = this;
-                m_list.Add(item);
+                nodes.Add(item);
                 Context.UpdateWith(item.Context);
             }
         }
@@ -243,7 +227,7 @@ namespace NUglify.JavaScript.Syntax
         /// <returns>zero-based index of the node in the block, or -1 if the node is not a direct child of the block</returns>
         public int IndexOf(AstNode item)
         {
-            return m_list.IndexOf(item);
+            return nodes.IndexOf(item);
         }
 
         /// <summary>
@@ -255,7 +239,7 @@ namespace NUglify.JavaScript.Syntax
         {
             if (item != null)
             {
-                int index = m_list.IndexOf(after);
+                int index = nodes.IndexOf(after);
                 if (index >= 0)
                 {
                     if (this.IsConcise)
@@ -275,7 +259,7 @@ namespace NUglify.JavaScript.Syntax
                     else
                     {
                         item.Parent = this;
-                        m_list.Insert(index + 1, item);
+                        nodes.Insert(index + 1, item);
                     }
                 }
             }
@@ -305,7 +289,7 @@ namespace NUglify.JavaScript.Syntax
                 else
                 {
                     item.Parent = this;
-                    m_list.Insert(index, item);
+                    nodes.Insert(index, item);
                 }
             }
         }
@@ -319,7 +303,7 @@ namespace NUglify.JavaScript.Syntax
             // the conciseness, because there's only one statement and we're going
             // to be deleting it.
             this.IsConcise = false;
-            RemoveAt(m_list.Count - 1);
+            RemoveAt(nodes.Count - 1);
         }
 
         /// <summary>
@@ -328,15 +312,15 @@ namespace NUglify.JavaScript.Syntax
         /// <param name="index">Zero-based position index</param>
         public void RemoveAt(int index)
         {
-            if (0 <= index && index < m_list.Count)
+            if (0 <= index && index < nodes.Count)
             {
                 // if this was concise, we're not anymore. Don't need to undo
                 // the conciseness, because there's only one statement and we're going
                 // to be deleting it.
                 this.IsConcise = false;
 
-                UnlinkParent(m_list[index]);
-                m_list.RemoveAt(index);
+                UnlinkParent(nodes[index]);
+                nodes.RemoveAt(index);
             }
         }
 
@@ -355,7 +339,7 @@ namespace NUglify.JavaScript.Syntax
                     Unconcise();
                 }
 
-                m_list.InsertRange(index, newItems);
+                nodes.InsertRange(index, newItems);
                 foreach (AstNode newItem in newItems)
                 {
                     newItem.Parent = this;
@@ -372,12 +356,12 @@ namespace NUglify.JavaScript.Syntax
 
             // there should be a single statement that's an expression. Make it the argument of
             // a return statement.
-            if (m_list.Count == 1)
+            if (nodes.Count == 1)
             {
-                var expression = m_list[0];
+                var expression = nodes[0];
                 if (expression.IsExpression)
                 {
-                    m_list[0] = new ReturnStatement(expression.Context)
+                    nodes[0] = new ReturnStatement(expression.Context)
                     {
                         Operand = expression,
                         Parent = this
@@ -386,18 +370,14 @@ namespace NUglify.JavaScript.Syntax
             }
         }
 
-        #region IEnumerable implementation
-
         public IEnumerator<AstNode> GetEnumerator()
         {
-            return m_list.GetEnumerator();
+            return nodes.GetEnumerator();
         }
 
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
         {
-            return m_list.GetEnumerator();
+            return nodes.GetEnumerator();
         }
-
-        #endregion
     }
 }

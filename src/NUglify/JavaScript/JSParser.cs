@@ -425,6 +425,8 @@ namespace NUglify.JavaScript
 
             timePoints[--timeIndex] = stopWatch.ElapsedTicks;
 
+            RemoveCommentsVisitor.Apply(scriptBlock, this);
+
             // resolve everything
             ResolutionVisitor.Apply(scriptBlock, GlobalScope, this);
             timePoints[--timeIndex] = stopWatch.ElapsedTicks;
@@ -439,6 +441,7 @@ namespace NUglify.JavaScript
 
             if (scriptBlock != null && Settings.MinifyCode && !Settings.PreprocessOnly)
             {
+
                 // this visitor doesn't just reorder scopes. It also combines the adjacent var variables,
                 // unnests blocks, identifies prologue directives, and sets the strict mode on scopes. 
                 ReorderScopeVisitor.Apply(scriptBlock, this);
@@ -1183,7 +1186,7 @@ namespace NUglify.JavaScript
                 codeBlock.Append(ParseStatement(false));
             }
 
-            // make sure any important comments before the closing brace are kept
+            // make sure any comments before the closing brace are kept
             AppendComments(codeBlock);
 
             if (m_currentToken.IsNot(JSToken.RightCurly))

@@ -330,7 +330,7 @@ namespace NUglify.JavaScript.Syntax
 
         internal void UnlinkParent(AstNode node)
         {
-            if ((node != null) && (node.Parent == this))
+            if (node != null && node.Parent == this)
             {
                 node.Parent = null;
             }

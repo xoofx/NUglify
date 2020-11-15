@@ -167,7 +167,7 @@ namespace NUglify.Tests.JavaScript
         [Test]
         public void Bug189()
         {
-	        TestHelper.Instance.RunTest("-pretty");
+	        TestHelper.Instance.RunTest("-pretty -comments:all");
         }
 
         [Test]

@@ -14,6 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Linq;
 using NUglify.JavaScript.Syntax;
 
 namespace NUglify.JavaScript.Visitors
@@ -83,13 +84,10 @@ namespace NUglify.JavaScript.Visitors
         {
             if (node != null)
             {
-                foreach (var statement in node.Children)
-                {
-                    if (statement != null)
-                    {
-                        statement.Accept(this);
-                    }
-                }
+                // Prevent enumeration modification
+	            var nodeChildren = node.Children.ToArray();
+	            foreach (var statement in nodeChildren)
+		            statement?.Accept(this);
             }
         }
 
@@ -100,39 +98,21 @@ namespace NUglify.JavaScript.Visitors
 
         public virtual void Visit(CallExpression node)
         {
-            if (node != null)
-            {
-                if (node.Arguments != null)
-                {
-                    node.Arguments.Accept(this);
-                }
+	        if (node == null)
+		        return;
 
-                if (node.Function != null)
-                {
-                    node.Function.Accept(this);
-                }
-            }
+	        node.Arguments?.Accept(this);
+	        node.Function?.Accept(this);
         }
 
         public virtual void Visit(ClassNode node)
         {
-            if (node != null)
-            {
-                if (node.Binding != null)
-                {
-                    node.Binding.Accept(this);
-                }
+	        if (node == null)
+		        return;
 
-                if (node.Heritage != null)
-                {
-                    node.Heritage.Accept(this);
-                }
-
-                if (node.Elements != null)
-                {
-                    node.Elements.Accept(this);
-                }
-            }
+	        node.Binding?.Accept(this);
+            node.Heritage?.Accept(this);
+            node.Elements?.Accept(this);
         }
 
         public virtual void Visit(ComprehensionNode node)
