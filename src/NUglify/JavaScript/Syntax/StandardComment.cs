@@ -1,7 +1,9 @@
-﻿using NUglify.JavaScript.Visitors;
+﻿using System.Diagnostics;
+using NUglify.JavaScript.Visitors;
 
 namespace NUglify.JavaScript.Syntax
 {
+    [DebuggerDisplay("{Comment}")]
     public class StandardComment : AstNode
     {
         public string Comment { get; set; }

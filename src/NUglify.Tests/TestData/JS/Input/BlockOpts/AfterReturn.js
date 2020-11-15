@@ -1,5 +1,5 @@
-﻿function test(a,b)
-{
+﻿function test(a,b) {
+
     var d = foo(c);
     return a + b + d;
 

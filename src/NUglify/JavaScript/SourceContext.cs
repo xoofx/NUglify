@@ -52,42 +52,20 @@ namespace NUglify.JavaScript
 
         public JSToken Token { get; internal set; }
 
-        public int StartColumn
-        {
-            get
-            {
-                return StartPosition - StartLinePosition;
-            }
-        }
+        public int StartColumn => StartPosition - StartLinePosition;
 
-        public int EndColumn
-        {
-            get
-            {
-                return EndPosition - EndLinePosition;
-            }
-        }
+        public int EndColumn => EndPosition - EndLinePosition;
 
-        public bool HasCode
-        {
-            get
-            {
-                return !Document.IsGenerated
-                    && EndPosition > StartPosition
-                    && EndPosition <= Document.Source.Length
-                    && EndPosition != StartPosition;
-            }
-        }
+        public bool HasCode =>
+	        !Document.IsGenerated
+	        && EndPosition > StartPosition
+	        && EndPosition <= Document.Source.Length
+	        && EndPosition != StartPosition;
 
-        public String Code
-        {
-            get
-            {
-                return (!Document.IsGenerated && EndPosition > StartPosition && EndPosition <= Document.Source.Length)
-                  ? Document.Source.Substring(StartPosition, EndPosition - StartPosition)
-                  : null;
-            }
-        }
+        public string Code =>
+	        (!Document.IsGenerated && EndPosition > StartPosition && EndPosition <= Document.Source.Length)
+		        ? Document.Source.Substring(StartPosition, EndPosition - StartPosition)
+		        : null;
 
         string ErrorSegment
         {
@@ -97,30 +75,20 @@ namespace NUglify.JavaScript
 
                 // just pull out the string that's between start position and end position
                 if (this.StartPosition >= source.Length)
-                {
-                    return string.Empty;
-                }
-                else
-                {
-                    int length = this.EndPosition - this.StartPosition;
-                    if (this.StartPosition + length <= source.Length)
-                    {
-                        return source.Substring(this.StartPosition, length).Trim();
-                    }
-                    else
-                    {
-                        return source.Substring(this.StartPosition).Trim();
-                    }
-                }
+	                return string.Empty;
+
+                int length = this.EndPosition - this.StartPosition;
+                if (this.StartPosition + length <= source.Length)
+	                return source.Substring(this.StartPosition, length).Trim();
+                
+                return source.Substring(this.StartPosition).Trim();
             }
         }
 
         public SourceContext(DocumentContext document)
         {
             if (document == null)
-            {
-                throw new ArgumentNullException("document");
-            }
+	            throw new ArgumentNullException("document");
 
             Document = document;
 

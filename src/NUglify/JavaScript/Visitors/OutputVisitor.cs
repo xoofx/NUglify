@@ -62,7 +62,7 @@ namespace NUglify.JavaScript.Visitors
 
         CodeSettings settings;
 
-        RequiresSeparatorVisitor m_requiresSeparator;
+        RequiresSeparatorVisitor requiresSeparator;
 
         static string[] s_exponents = { 
             null, 
@@ -107,7 +107,7 @@ namespace NUglify.JavaScript.Visitors
             outputStream = writer;
             this.settings = settings ?? new CodeSettings();
             onNewLine = true;
-            m_requiresSeparator = new RequiresSeparatorVisitor(this.settings);
+            requiresSeparator = new RequiresSeparatorVisitor(this.settings);
             m_hasReplacementTokens = settings.ReplacementTokens.Count > 0;
             writer.NewLine = settings.LineTerminator;
         }
@@ -594,18 +594,40 @@ namespace NUglify.JavaScript.Visitors
                 }
 
                 AstNode prevStatement = null;
+                AstNode prevNonCommentStatement = null;
                 for (var ndx = 0; ndx < node.Count; ++ndx)
                 {
                     var statement = node[ndx];
                     if (statement != null)
                     {
-                        if (prevStatement != null && m_requiresSeparator.Query(prevStatement))
-                        {
-                            OutputPossibleLineBreak(';');
-                            MarkSegment(prevStatement, null, prevStatement.TerminatingContext);
-                        }
+	                    if (prevStatement != null)
+	                    {
+		                    if (statement is StandardComment || statement is ImportantComment)
+		                    {
+                                // no need for a ; yet
+                                MarkSegment(prevStatement, null, prevStatement.TerminatingContext);
+                            }
+		                    else if (requiresSeparator.Query(prevNonCommentStatement))
+		                    {
+			                    OutputPossibleLineBreak(';');
+			                    MarkSegment(prevStatement, null, prevStatement.TerminatingContext);
+                            }
+		                    
+	                    }
+                        //
+                        // if (prevStatement != null && requiresSeparator.Query(prevStatement))
+                        // {
+                        //     // only output a ; if the prev statement wasnt a comment
+                        //     /*
+                        //      *  -- if the previous statement was a comment, and we have previous non-comment code
+                        //      *  if prevstatement is comment and prevnoncomment != null
+                        //      *
+                        //      */
+                        //     OutputPossibleLineBreak(';');
+                        //     MarkSegment(prevStatement, null, prevStatement.TerminatingContext);
+                        // }
 
-                        if (!(statement is DirectivePrologue))
+                        if (!(statement is DirectivePrologue || statement is StandardComment || statement is ImportantComment))
                         {
                             if (m_needsStrictDirective)
                             {
@@ -622,6 +644,8 @@ namespace NUglify.JavaScript.Visitors
                         m_startOfStatement = true;
                         statement.Accept(this);
                         prevStatement = statement;
+                        if (!(statement is StandardComment || statement is ImportantComment))
+	                        prevNonCommentStatement = statement;
                     }
                 }
 
@@ -639,7 +663,7 @@ namespace NUglify.JavaScript.Visitors
                     OutputPossibleLineBreak('}');
                     MarkSegment(node, null, node.Context);
                 }
-                else if (prevStatement != null && m_requiresSeparator.Query(prevStatement) && settings.TermSemicolons)
+                else if (prevStatement != null && requiresSeparator.Query(prevStatement) && settings.TermSemicolons)
                 {
                     // this is the root block (parent is null) and we want to make sure we end
                     // with a terminating semicolon, so don't replace it
@@ -1015,7 +1039,7 @@ namespace NUglify.JavaScript.Visitors
                         statement = node.Statements[ndx];
                         if (statement != null)
                         {
-                            if (prevStatement != null && m_requiresSeparator.Query(prevStatement))
+                            if (prevStatement != null && requiresSeparator.Query(prevStatement))
                             {
                                 OutputPossibleLineBreak(';');
                                 MarkSegment(prevStatement, null, prevStatement.TerminatingContext);
@@ -1541,7 +1565,7 @@ namespace NUglify.JavaScript.Visitors
                     m_startOfStatement = true;
                     node.Body[0].Accept(this);
 
-                    if (m_requiresSeparator.Query(node.Body[0]))
+                    if (requiresSeparator.Query(node.Body[0]))
                     {
                         // because the next thing we are going to output is a while keyword, if the
                         // semicolon would be at the end of a line, we can skip it and just let the
@@ -2039,7 +2063,7 @@ namespace NUglify.JavaScript.Visitors
                     }
 
                     if (node.FalseBlock != null && node.FalseBlock.Count > 0
-                        && m_requiresSeparator.Query(node.TrueBlock[0]))
+                        && requiresSeparator.Query(node.TrueBlock[0]))
                     {
                         // we have only one statement, we did not wrap it in braces,
                         // and we have an else-block, and the one true-statement needs
@@ -2171,10 +2195,8 @@ namespace NUglify.JavaScript.Visitors
             {
                 var symbol = StartSymbol(node);
 
-                // make sure we force the important comments to start on a new line, regardless
-                // of whether or not we are in multi- or single-line mode, and the statement after
-                // should also be on a new line.
-                BreakLine(true);
+                if(settings.OutputMode == OutputMode.MultipleLines)
+					BreakLine(true);
 
                 node.Context.OutputLine = lineCount;
 
@@ -2898,7 +2920,7 @@ namespace NUglify.JavaScript.Visitors
                     var switchCase = node.Cases[ndx];
                     if (switchCase != null)
                     {
-                        if (prevSwitchCase != null && m_requiresSeparator.Query(prevSwitchCase))
+                        if (prevSwitchCase != null && requiresSeparator.Query(prevSwitchCase))
                         {
                             // because the next switch-case will always start with either the case or default
                             // keyword, if the semicolon we are about the output would be at the end of a newline,
@@ -2958,7 +2980,7 @@ namespace NUglify.JavaScript.Visitors
                         var statement = node.Statements[ndx];
                         if (statement != null)
                         {
-                            if (prevStatement != null && m_requiresSeparator.Query(prevStatement))
+                            if (prevStatement != null && requiresSeparator.Query(prevStatement))
                             {
                                 OutputPossibleLineBreak(';');
                                 MarkSegment(prevStatement, null, prevStatement.TerminatingContext);

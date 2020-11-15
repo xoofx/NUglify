@@ -1,1 +1,2 @@
-﻿function one(a,b){"use strict";return a=b+b,b+a}function two(c,d){"some other prologue";"use strict";return d+c+d}function three(e,f){"use strict";var d=e+f;return d}
+﻿function one(a,b){"use strict";return a=b+b,b+a}function two(c,d){//! no semi-colons -- they are implicit and should still count
+"some other prologue";"use strict";return d+c+d}function three(e,f){"use strict";var d=e+f;return d}
