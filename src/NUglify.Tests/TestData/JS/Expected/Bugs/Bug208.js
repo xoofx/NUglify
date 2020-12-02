@@ -1,0 +1,1 @@
+﻿var test={};test.subNameSpace={failureTesting:()=>{var n=(n=false)=>{console.log("ok "+n)};n(!0)}};window.onload=function(){test.subNameSpace.failureTesting()}
