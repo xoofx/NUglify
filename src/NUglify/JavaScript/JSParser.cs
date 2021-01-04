@@ -739,7 +739,7 @@ namespace NUglify.JavaScript
             if (skipComments)
 	            comments.Clear();
 
-            if (comments.Count > 0 && m_settings.CommentMode != JsComment.None)
+            if (comments.Count > 0 && m_settings.CommentMode != JsComment.PreserveNone)
             //&& m_settings.IsModificationAllowed(TreeModifications.PreserveImportantComments))
             {
 	            // we have at least one comment before the upcoming statement.
@@ -5744,7 +5744,7 @@ namespace NUglify.JavaScript
             {
                 // make sure any comments before the closing brace are kept
                 if (comments.Count > 0
-                    && m_settings.CommentMode != JsComment.None)
+                    && m_settings.CommentMode != JsComment.PreserveNone)
                     //&& m_settings.IsModificationAllowed(TreeModifications.PreserveImportantComments))
                 {
                     // we have comments before the EOF. Add the comment(s) to the program.

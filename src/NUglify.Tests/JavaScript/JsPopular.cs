@@ -61,7 +61,7 @@ namespace NUglify.Tests.JavaScript
             var jqueryText = client.DownloadString(url);
             var result = Uglify.Js(jqueryText, file, new CodeSettings
             {
-                CommentMode = JsComment.None,
+                CommentMode = JsComment.PreserveNone,
                 StripDebugStatements = true,
                 LineBreakThreshold = int.MaxValue,
             });

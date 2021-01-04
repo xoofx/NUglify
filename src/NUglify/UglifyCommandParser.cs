@@ -535,17 +535,17 @@ namespace NUglify
                                 if (paramPartUpper == "NONE")
                                 {
                                     CssSettings.CommentMode = CssComment.None;
-                                    JSSettings.CommentMode = JsComment.None;
+                                    JSSettings.CommentMode = JsComment.PreserveNone;
                                 }
                                 else if (paramPartUpper == "ALL")
                                 {
                                     CssSettings.CommentMode = CssComment.All;
-                                    JSSettings.CommentMode = JsComment.All;
+                                    JSSettings.CommentMode = JsComment.PreserveAll;
                                 }
                                 else if (paramPartUpper == "IMPORTANT")
                                 {
                                     CssSettings.CommentMode = CssComment.Important;
-                                    JSSettings.CommentMode = JsComment.Important;
+                                    JSSettings.CommentMode = JsComment.PreserveImportant;
                                 }
                                 else if (paramPartUpper == "HACKS")
                                 {

@@ -5,16 +5,16 @@
 		/// <summary>
 		/// Don't output any comments
 		/// </summary>
-		None = 0,
+		PreserveNone = 0,
 
 		/// <summary>
 		/// Only output important comments (//! or /*!)
 		/// </summary>
-		Important = 1,
+		PreserveImportant = 1,
 
 		/// <summary>
 		/// Output all comments
 		/// </summary>
-		All = 2
+		PreserveAll = 2
 	}
 }

@@ -37,7 +37,7 @@ namespace NUglify.JavaScript.Visitors
 
 		public override void Visit(Syntax.Comment node)
 		{
-			if (parser.Settings.CommentMode != JsComment.None && (parser.Settings.CommentMode != JsComment.Important || node.IsImportant))
+			if (parser.Settings.CommentMode != JsComment.PreserveNone && (parser.Settings.CommentMode != JsComment.PreserveImportant || node.IsImportant))
 				return;
 
 			node.Parent.ReplaceChild(node, null);
