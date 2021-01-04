@@ -3871,6 +3871,8 @@ namespace NUglify.Css
 
                             // add the comment to the builder
                             sb.Append(commentText);
+                            if(Settings.OutputMode == OutputMode.MultipleLines)
+								sb.Append(Settings.LineTerminator);
                         }
                     }
 

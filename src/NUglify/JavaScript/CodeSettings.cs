@@ -40,7 +40,7 @@ namespace NUglify.JavaScript
             this.EvalTreatment = EvalTreatment.Ignore;
             this.InlineSafeStrings = true;
             this.MacSafariQuirks = true;
-            this.CommentMode = JsComment.Important;
+            this.CommentMode = JsComment.PreserveImportant;
             this.QuoteObjectLiteralProperties = false;
             this.StrictMode = false;
             this.StripDebugStatements = true;
@@ -745,8 +745,8 @@ namespace NUglify.JavaScript
         [Obsolete("Use CommentMode instead")]
         public bool PreserveImportantComments
         {
-	        get => this.CommentMode != JsComment.None;
-	        set => this.CommentMode = this.CommentMode == JsComment.None ? JsComment.Important : this.CommentMode;
+	        get => this.CommentMode != JsComment.PreserveNone;
+	        set => this.CommentMode = this.CommentMode == JsComment.PreserveNone ? JsComment.PreserveImportant : this.CommentMode;
         }
 
         /// <summary>
