@@ -24,19 +24,20 @@ namespace NUglify.JavaScript.Visitors
                 block.Accept(visitor);
             }
         }
-
-		public override void Visit(StandardComment node)
+		public override void Visit(BlockStatement node)
 		{
-			if (parser.Settings.CommentMode == JsComment.All)
-				return;
-
-			node.Parent.ReplaceChild(node, null);
-			node.Parent = null;
+			if (node != null)
+			{
+				// iterate backwards as we are likely to remove nodes
+				for (var ndx = node.Count - 1; ndx >= 0; --ndx)
+					node[ndx].Accept(this);
+			}
 		}
 
-		public override void Visit(ImportantComment node)
+
+		public override void Visit(Syntax.Comment node)
 		{
-			if (parser.Settings.CommentMode == JsComment.None)
+			if (parser.Settings.CommentMode != JsComment.None && (parser.Settings.CommentMode != JsComment.Important || node.IsImportant))
 				return;
 
 			node.Parent.ReplaceChild(node, null);

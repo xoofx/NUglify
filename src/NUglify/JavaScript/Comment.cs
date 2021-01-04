@@ -11,5 +11,6 @@ namespace NUglify.JavaScript
 	{
 		public SourceContext Context { get; set; }
 		public bool IsImportant { get; set; }
+		public bool IsMultiLine { get; set; }
 	}
 }

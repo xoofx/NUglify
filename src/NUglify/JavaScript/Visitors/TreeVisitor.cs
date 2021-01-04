@@ -84,9 +84,7 @@ namespace NUglify.JavaScript.Visitors
         {
             if (node != null)
             {
-                // Prevent enumeration modification
-	            var nodeChildren = node.Children.ToArray();
-	            foreach (var statement in nodeChildren)
+	            foreach (var statement in node.Children)
 		            statement?.Accept(this);
             }
         }
@@ -419,11 +417,7 @@ namespace NUglify.JavaScript.Visitors
             }
         }
 
-        public virtual void Visit(StandardComment node)
-        {
-            // no children
-        }
-        public virtual void Visit(ImportantComment node)
+        public virtual void Visit(Syntax.Comment node)
         {
             // no children
         }

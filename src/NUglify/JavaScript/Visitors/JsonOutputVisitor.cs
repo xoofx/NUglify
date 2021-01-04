@@ -544,12 +544,7 @@ namespace NUglify.JavaScript.Visitors
             IsValid = false;
         }
 
-        public void Visit(StandardComment node)
-        {
-            // invalid! ignore
-            IsValid = false;
-        }
-        public void Visit(ImportantComment node)
+        public void Visit(Syntax.Comment node)
         {
             // invalid! ignore
             IsValid = false;

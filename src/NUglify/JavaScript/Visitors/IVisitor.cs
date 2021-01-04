@@ -57,8 +57,7 @@ namespace NUglify.JavaScript.Visitors
         void Visit(GetterSetter node);
         void Visit(GroupingOperator node);
         void Visit(IfStatement node);
-        void Visit(StandardComment node);
-        void Visit(ImportantComment node);
+        void Visit(Syntax.Comment node);
         void Visit(ImportExportSpecifier node);
         void Visit(ImportStatement node);
         void Visit(InitializerNode node);

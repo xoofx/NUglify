@@ -1,3 +1,4 @@
-﻿let x = 1; // a comment
+﻿let x = 1
+// a comment
 // another comment
-let y = 2;
+let y = 2

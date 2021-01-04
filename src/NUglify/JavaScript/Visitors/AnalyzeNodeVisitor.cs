@@ -610,7 +610,7 @@ namespace NUglify.JavaScript.Visitors
             // or important comments until we get the last statement
             var lastStatementIndex = node.Count - 1;
             while (lastStatementIndex >= 0 
-                && (node[lastStatementIndex] is FunctionObject || node[lastStatementIndex] is ImportantComment || node[lastStatementIndex] is StandardComment))
+                && (node[lastStatementIndex] is FunctionObject || node[lastStatementIndex] is Syntax.Comment))
             {
                 --lastStatementIndex;
             }
@@ -1565,7 +1565,7 @@ namespace NUglify.JavaScript.Visitors
             // get the index of the statement before the last return
             // (skip over function decls and importand comments)
             var indexPrevious = node.IndexOf(child) - 1;
-            while (indexPrevious >= 0 && (node[indexPrevious] is FunctionObject || node[indexPrevious] is ImportantComment || node[indexPrevious] is StandardComment))
+            while (indexPrevious >= 0 && (node[indexPrevious] is FunctionObject || node[indexPrevious] is Syntax.Comment))
             {
                 --indexPrevious;
             }

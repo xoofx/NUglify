@@ -749,10 +749,7 @@ namespace NUglify.JavaScript
                 var comment = comments[0];
 	            comments.RemoveAt(0);
 
-                if (!comment.IsImportant)
-		            return new StandardComment(comment.Context);
-
-                return new ImportantComment(comment.Context);
+                return new Syntax.Comment(comment.Context, comment.IsImportant, comment.IsMultiLine);
             }
 
             AstNode statement = null;
@@ -3012,7 +3009,7 @@ namespace NUglify.JavaScript
                             };
                         }
                     }
-                    else if (!m_newModule && !(statement is ImportantComment || statement is StandardComment))
+                    else if (!m_newModule && !(statement is Syntax.Comment))
                     {
                         // no longer considering constant wrappers
                         possibleDirectivePrologue = false;
@@ -5752,9 +5749,7 @@ namespace NUglify.JavaScript
                 {
                     // we have comments before the EOF. Add the comment(s) to the program.
                     foreach (var comment in comments)
-                    {
-	                    block.Append(comment.IsImportant ? new ImportantComment(comment.Context) : new StandardComment(comment.Context) as AstNode);
-                    }
+	                    block.Append(new Syntax.Comment(comment.Context, comment.IsImportant, comment.IsMultiLine));
 
                     comments.Clear();
                 }
@@ -5822,7 +5817,8 @@ namespace NUglify.JavaScript
 						comments.Add(new Comment
 						{
 							Context = nextToken.Clone(),
-							IsImportant = important
+							IsImportant = important,
+                            IsMultiLine = nextToken.Is(JSToken.MultipleLineComment)
 						});
                     }
                 }

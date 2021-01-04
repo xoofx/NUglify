@@ -1,3 +1,1 @@
-﻿/*! First Important Comment */
-/*! Second Important Comment */
-var a=10
+﻿/*! First Important Comment *//*! Second Important Comment */var a=10

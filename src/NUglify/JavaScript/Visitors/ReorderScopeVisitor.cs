@@ -101,7 +101,7 @@ namespace NUglify.JavaScript.Visitors
 
                 // Make sure that we skip over any remaining comments and directive prologues.
                 // we do NOT want to insert anything between the start of the scope and any directive prologues.            
-                while (insertAt < block.Count && (block[insertAt] is DirectivePrologue || block[insertAt] is ImportantComment || block[insertAt] is StandardComment))
+                while (insertAt < block.Count && (block[insertAt] is DirectivePrologue || block[insertAt] is Syntax.Comment))
                 {
                     ++insertAt;
                 }
@@ -158,7 +158,7 @@ namespace NUglify.JavaScript.Visitors
         static int RelocateDirectivePrologue(BlockStatement block, int insertAt, DirectivePrologue directivePrologue)
         {
             // skip over any comments
-            while (insertAt < block.Count && (block[insertAt] is ImportantComment || block[insertAt] is StandardComment))
+            while (insertAt < block.Count && (block[insertAt] is Syntax.Comment))
 	            ++insertAt;
 
             // if the one we want to insert is already at this spot, then we're good to go
@@ -595,7 +595,7 @@ namespace NUglify.JavaScript.Visitors
                 {
                     // walk backwards until we find the last non-comment statement
                     var ndxLast = node.Count - 1;
-                    while (ndxLast >= 0 && (node[ndxLast] is ImportantComment || node[ndxLast] is StandardComment))
+                    while (ndxLast >= 0 && (node[ndxLast] is Syntax.Comment))
 	                    --ndxLast;
 
                     // if the last non-comment statement isn't the first....

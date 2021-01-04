@@ -5,9 +5,7 @@
 function foo() {/*! this too */}
 /* regular comment that will get stripped */
 var a = 12;
-/*!
- * this is another one, but it's between a couple var statements
- */
+/*! * this is another one, but it's between a couple var statements */
 var b = 13;
 
 /** @preserve This is an important comment because of the @preserve token */
