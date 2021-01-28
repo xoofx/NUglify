@@ -3878,10 +3878,7 @@ namespace NUglify.Css
 
                     // next token
                     m_currentToken = m_scanner.NextToken(!m_insideCalc);
-                    if (EchoWriter != null)
-                    {
-                        EchoWriter.Write(CurrentTokenText);
-                    }
+                    EchoWriter?.Write(CurrentTokenText);
 
                     m_encounteredNewLine = m_encounteredNewLine || m_scanner.GotEndOfLine;
                 }
