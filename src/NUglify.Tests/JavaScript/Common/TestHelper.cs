@@ -180,6 +180,7 @@ namespace NUglify.Tests.JavaScript.Common
 
             // create a list we will append all our arguments to
             bool includeAnalysis = true;
+            bool specifiesWarningLevel = false;
             bool specifiesRename = false;
             LinkedList<string> args = new LinkedList<string>();
             if (!string.IsNullOrEmpty(extraArguments))
@@ -282,6 +283,10 @@ namespace NUglify.Tests.JavaScript.Common
                         {
                             specifiesRename = true;
                         }
+                        else if (option.StartsWith("-warn:", StringComparison.OrdinalIgnoreCase))
+                        {
+	                        specifiesWarningLevel = true;
+                        }
                         else if (option.StartsWith("-map", StringComparison.OrdinalIgnoreCase))
                         {
                             outputMapFile = GetJsPath(
@@ -314,6 +319,13 @@ namespace NUglify.Tests.JavaScript.Common
             if (!specifiesRename)
             {
                 args.AddLast("-rename:none");
+            }
+
+            // if we haven't already specified a warning level option, we will
+            // use -warn:1 which should be only errors
+            if (!specifiesWarningLevel)
+            {
+	            args.AddLast("-warn:1");
             }
 
             string outputPath = null;
@@ -468,7 +480,7 @@ namespace NUglify.Tests.JavaScript.Common
 
                     // fail the test if the files do not match
                     AssertCompareTextFiles(outputPath, expectedPath);
-                    //Assert.IsTrue(retValue == 0, "Run didn't succeed. Return code: {0}", retValue);
+                    Assert.IsTrue(retValue == 0, "Run didn't succeed. Return code: {0}", retValue);
                 }
                 else if (File.Exists(expectedPath))
                 {
