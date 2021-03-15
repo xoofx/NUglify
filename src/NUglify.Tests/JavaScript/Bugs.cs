@@ -170,6 +170,13 @@ namespace NUglify.Tests.JavaScript
 	        TestHelper.Instance.RunTest("-pretty -comments:all");
         }
 
+
+        [Test]
+        public void Bug189Important()
+        {
+	        TestHelper.Instance.RunTest("-pretty -comments:important");
+        }
+
         [Test]
         public void Bug197()
         {
